@@ -11,7 +11,7 @@ import {
   getNewConversationListAfterAdd,
   getUpdatedConversationListAfterAdd,
   getSortedMessages,
-} from '../services/page-services/home-page-service';
+} from '../services/homePageServices/homePageService';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -67,21 +67,18 @@ const Home = ({ user, logout }) => {
     });
   };
 
-  const postMessage = (body) => {
-    saveMessage(body)
-      .then((data) => {
-        console.log('Daata', data);
-        if (!body.conversationId) {
-          addNewConvo(body.recipientId, data.message);
-        } else {
-          addMessageToConversation(data);
-        }
-
-        sendMessage(data, body);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+  const postMessage = async (body) => {
+    try {
+      const data = await saveMessage(body);
+      if (!body.conversationId) {
+        addNewConvo(body.recipientId, data.message);
+      } else {
+        addMessageToConversation(data);
+      }
+      sendMessage(data, body);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const addNewConvo = useCallback(

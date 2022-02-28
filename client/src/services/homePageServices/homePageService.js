@@ -40,14 +40,12 @@ export function getUpdatedConversationListAfterAdd(conversations, data) {
   });
 }
 
-export function getSortedMessages(data) {
-  return data.map((newData) => {
-    const { messages } = newData;
-    const sortedMessages = messages.sort((a, b) => {
-      const date1 = new Date(a.createdAt);
-      const date2 = new Date(b.createdAt);
-      return date1 - date2;
-    });
-    return { ...newData, messages: sortedMessages };
+export function getSortedMessages(conversations) {
+  return conversations.map((conversation) => {
+    const { messages } = conversation;
+    const sortedMessages = messages.sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    );
+    return { ...conversation, messages: sortedMessages };
   });
 }
