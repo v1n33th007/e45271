@@ -7,6 +7,11 @@ import { makeStyles } from '@material-ui/core/styles';
 import { SidebarContainer } from '../components/Sidebar';
 import { ActiveChat } from '../components/ActiveChat';
 import { SocketContext } from '../context/socket';
+import {
+  getNewConversationListAfterAdd,
+  getUpdatedConversationListAfterAdd,
+  getSortedMessages,
+} from '../services/page-services/home-page-service';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -63,31 +68,30 @@ const Home = ({ user, logout }) => {
   };
 
   const postMessage = (body) => {
-    try {
-      const data = saveMessage(body);
+    saveMessage(body)
+      .then((data) => {
+        console.log('Daata', data);
+        if (!body.conversationId) {
+          addNewConvo(body.recipientId, data.message);
+        } else {
+          addMessageToConversation(data);
+        }
 
-      if (!body.conversationId) {
-        addNewConvo(body.recipientId, data.message);
-      } else {
-        addMessageToConversation(data);
-      }
-
-      sendMessage(data, body);
-    } catch (error) {
-      console.error(error);
-    }
+        sendMessage(data, body);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   };
 
   const addNewConvo = useCallback(
     (recipientId, message) => {
-      conversations.forEach((convo) => {
-        if (convo.otherUser.id === recipientId) {
-          convo.messages.push(message);
-          convo.latestMessageText = message.text;
-          convo.id = message.conversationId;
-        }
-      });
-      setConversations(conversations);
+      const newConversations = getNewConversationListAfterAdd(
+        conversations,
+        recipientId,
+        message
+      );
+      setConversations(newConversations);
     },
     [setConversations, conversations]
   );
@@ -95,24 +99,11 @@ const Home = ({ user, logout }) => {
   const addMessageToConversation = useCallback(
     (data) => {
       // if sender isn't null, that means the message needs to be put in a brand new convo
-      const { message, sender = null } = data;
-      if (sender !== null) {
-        const newConvo = {
-          id: message.conversationId,
-          otherUser: sender,
-          messages: [message],
-        };
-        newConvo.latestMessageText = message.text;
-        setConversations((prev) => [newConvo, ...prev]);
-      }
-
-      conversations.forEach((convo) => {
-        if (convo.id === message.conversationId) {
-          convo.messages.push(message);
-          convo.latestMessageText = message.text;
-        }
-      });
-      setConversations(conversations);
+      const newConversations = getUpdatedConversationListAfterAdd(
+        conversations,
+        data
+      );
+      setConversations(newConversations);
     },
     [setConversations, conversations]
   );
@@ -183,7 +174,8 @@ const Home = ({ user, logout }) => {
     const fetchConversations = async () => {
       try {
         const { data } = await axios.get('/api/conversations');
-        setConversations(data);
+        const sortedData = getSortedMessages(data);
+        setConversations(sortedData);
       } catch (error) {
         console.error(error);
       }
