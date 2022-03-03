@@ -62,16 +62,14 @@ const Home = ({ user, logout }) => {
     });
   };
 
-  const postMessage = (body) => {
+  const postMessage = async (body) => {
     try {
-      const data = saveMessage(body);
-
+      const data = await saveMessage(body);
       if (!body.conversationId) {
         addNewConvo(body.recipientId, data.message);
       } else {
         addMessageToConversation(data);
       }
-
       sendMessage(data, body);
     } catch (error) {
       console.error(error);
@@ -80,14 +78,18 @@ const Home = ({ user, logout }) => {
 
   const addNewConvo = useCallback(
     (recipientId, message) => {
-      conversations.forEach((convo) => {
+      const newConversations = conversations.map((convo) => {
         if (convo.otherUser.id === recipientId) {
-          convo.messages.push(message);
-          convo.latestMessageText = message.text;
-          convo.id = message.conversationId;
+          const newConvo = { ...convo };
+          newConvo.messages = [...convo.messages, message];
+          newConvo.latestMessageText = message.text;
+          newConvo.id = message.conversationId;
+          return newConvo;
+        } else {
+          return convo;
         }
       });
-      setConversations(conversations);
+      setConversations(newConversations);
     },
     [setConversations, conversations]
   );
@@ -104,15 +106,20 @@ const Home = ({ user, logout }) => {
         };
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
+        return;
       }
 
-      conversations.forEach((convo) => {
+      const newConversationList = conversations.map((convo) => {
         if (convo.id === message.conversationId) {
-          convo.messages.push(message);
-          convo.latestMessageText = message.text;
+          const newConvo = { ...convo };
+          newConvo.messages = [...convo.messages, message];
+          newConvo.latestMessageText = message.text;
+          return newConvo;
+        } else {
+          return convo;
         }
       });
-      setConversations(conversations);
+      setConversations(newConversationList);
     },
     [setConversations, conversations]
   );
@@ -183,7 +190,14 @@ const Home = ({ user, logout }) => {
     const fetchConversations = async () => {
       try {
         const { data } = await axios.get('/api/conversations');
-        setConversations(data);
+        const sortedData = data.map((conversation) => {
+          const { messages } = conversation;
+          const sortedMessages = messages.sort(
+            (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+          );
+          return { ...conversation, messages: sortedMessages };
+        });
+        setConversations(sortedData);
       } catch (error) {
         console.error(error);
       }
