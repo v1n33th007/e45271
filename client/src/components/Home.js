@@ -54,6 +54,11 @@ const Home = ({ user, logout }) => {
     return data;
   };
 
+  const saveReadStatus = async (body) => {
+    const { data } = await axios.post('/api/messages/updateReadStatus', body);
+    return data;
+  };
+
   const sendMessage = (data, body) => {
     socket.emit('new-message', {
       message: data.message,
@@ -71,6 +76,79 @@ const Home = ({ user, logout }) => {
         addMessageToConversation(data);
       }
       sendMessage(data, body);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const sendReadReceipt = (data) => {
+    socket.emit('read-receipt', data);
+  };
+
+  const addLastReadMessageAndCount = useCallback((conversations) => {
+    return (conversations ?? []).map((conversation) => {
+      const { messages, otherUser } = conversation;
+      const lastReadMessage = messages.findLast((message) => {
+        return message.senderId === otherUser.id && message.readAt;
+      });
+      const lastReadMessageByOtherUser = messages.findLast((message) => {
+        return message.senderId !== otherUser.id && message.readAt;
+      });
+      return {
+        ...conversation,
+        lastReadMessage,
+        lastReadMessageByOtherUser,
+        unreadMessages: messages.filter(
+          (message) => message.senderId === otherUser.id && !message.readAt
+        ).length,
+      };
+    });
+  }, []);
+
+  const updateConversationsWithReadMessageData = useCallback(
+    (conversations, conversationId, messageId, readAt, userId) => {
+      return conversations.map((convo) => {
+        if (convo.id === conversationId) {
+          const newMessages = (convo.messages ?? []).map((message) => {
+            if (
+              message.id <= messageId &&
+              !message.readAt &&
+              message.senderId === (userId ?? 0)
+            ) {
+              return { ...message, readAt };
+            } else {
+              return message;
+            }
+          });
+          return { ...convo, messages: newMessages };
+        } else {
+          return convo;
+        }
+      });
+    },
+    []
+  );
+
+  const postReadStatus = async (body) => {
+    try {
+      const { conversationId, readAt, messageId, userId } =
+        await saveReadStatus(body);
+      const newConversations = updateConversationsWithReadMessageData(
+        conversations,
+        conversationId,
+        messageId,
+        readAt,
+        userId
+      );
+      const lastReadAndMesssageCountData =
+        addLastReadMessageAndCount(newConversations);
+      setConversations(lastReadAndMesssageCountData);
+      sendReadReceipt({
+        conversationId,
+        readAt,
+        messageId,
+        userId,
+      });
     } catch (error) {
       console.error(error);
     }
@@ -119,9 +197,11 @@ const Home = ({ user, logout }) => {
           return convo;
         }
       });
-      setConversations(newConversationList);
+      const conversationListUpdated =
+        addLastReadMessageAndCount(newConversationList);
+      setConversations(conversationListUpdated);
     },
-    [setConversations, conversations]
+    [setConversations, conversations, addLastReadMessageAndCount]
   );
 
   const setActiveChat = (username) => {
@@ -156,6 +236,26 @@ const Home = ({ user, logout }) => {
     );
   }, []);
 
+  const updateReadReceiptDataFromSocket = useCallback(
+    ({ conversationId, readAt, messageId, userId }) => {
+      const newConversations = updateConversationsWithReadMessageData(
+        conversations,
+        conversationId,
+        messageId,
+        readAt,
+        userId
+      );
+      const lastReadAndMesssageCountData =
+        addLastReadMessageAndCount(newConversations);
+      setConversations(lastReadAndMesssageCountData);
+    },
+    [
+      addLastReadMessageAndCount,
+      conversations,
+      updateConversationsWithReadMessageData,
+    ]
+  );
+
   // Lifecycle
 
   useEffect(() => {
@@ -163,6 +263,7 @@ const Home = ({ user, logout }) => {
     socket.on('add-online-user', addOnlineUser);
     socket.on('remove-offline-user', removeOfflineUser);
     socket.on('new-message', addMessageToConversation);
+    socket.on('read-receipt', updateReadReceiptDataFromSocket);
 
     return () => {
       // before the component is destroyed
@@ -170,8 +271,15 @@ const Home = ({ user, logout }) => {
       socket.off('add-online-user', addOnlineUser);
       socket.off('remove-offline-user', removeOfflineUser);
       socket.off('new-message', addMessageToConversation);
+      socket.off('read-receipt', updateReadReceiptDataFromSocket);
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket]);
+  }, [
+    addMessageToConversation,
+    addOnlineUser,
+    removeOfflineUser,
+    socket,
+    updateReadReceiptDataFromSocket,
+  ]);
 
   useEffect(() => {
     // when fetching, prevent redirect
@@ -197,7 +305,9 @@ const Home = ({ user, logout }) => {
           );
           return { ...conversation, messages: sortedMessages };
         });
-        setConversations(sortedData);
+        const lastReadAndMesssageCountData =
+          addLastReadMessageAndCount(sortedData);
+        setConversations(lastReadAndMesssageCountData);
       } catch (error) {
         console.error(error);
       }
@@ -205,7 +315,7 @@ const Home = ({ user, logout }) => {
     if (!user.isFetching) {
       fetchConversations();
     }
-  }, [user]);
+  }, [user, addLastReadMessageAndCount]);
 
   const handleLogout = async () => {
     if (user && user.id) {
@@ -230,6 +340,7 @@ const Home = ({ user, logout }) => {
           conversations={conversations}
           user={user}
           postMessage={postMessage}
+          postReadStatus={postReadStatus}
         />
       </Grid>
     </>
