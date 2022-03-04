@@ -7,6 +7,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { SidebarContainer } from '../components/Sidebar';
 import { ActiveChat } from '../components/ActiveChat';
 import { SocketContext } from '../context/socket';
+import { findLast } from '../utils/arrayUtils';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -88,10 +89,10 @@ const Home = ({ user, logout }) => {
   const addLastReadMessageAndCount = useCallback((conversations) => {
     return (conversations ?? []).map((conversation) => {
       const { messages, otherUser } = conversation;
-      const lastReadMessage = messages.findLast((message) => {
+      const lastReadMessage = findLast(messages, (message) => {
         return message.senderId === otherUser.id && message.readAt;
       });
-      const lastReadMessageByOtherUser = messages.findLast((message) => {
+      const lastReadMessageByOtherUser = findLast(messages, (message) => {
         return message.senderId !== otherUser.id && message.readAt;
       });
       return {

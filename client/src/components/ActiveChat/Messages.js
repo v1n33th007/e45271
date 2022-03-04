@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Box } from '@material-ui/core';
 import { SenderBubble, OtherUserBubble } from '.';
 import moment from 'moment';
+import { findLast } from '../../utils/arrayUtils';
 
 const Messages = (props) => {
   const {
@@ -15,7 +16,7 @@ const Messages = (props) => {
 
   useEffect(() => {
     if (messages) {
-      const lastUnreadMessage = messages.findLast((message) => {
+      const lastUnreadMessage = findLast(messages, (message) => {
         return (
           message.id > (lastReadMessage?.id ?? 0) &&
           message.senderId !== userId &&
