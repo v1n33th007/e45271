@@ -11,9 +11,10 @@ const Message = db.define("message", {
     type: Sequelize.INTEGER,
     allowNull: false,
   },
-  readAt: {
-    type: Sequelize.DATE,
-    allowNull: true,
+  isRead: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
   },
 });
 
@@ -28,9 +29,9 @@ Message.findMessage = async function (messageId) {
   return message;
 };
 
-Message.updateReadAt = async function (message, readAt) {
+Message.updateIsRead = async function (message, isRead) {
   await Message.update(
-    { readAt },
+    { isRead },
     {
       where: {
         [Op.and]: [

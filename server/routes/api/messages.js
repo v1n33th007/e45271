@@ -43,31 +43,33 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.post("/updateReadStatus", async (req, res, next) => {
+router.patch("/readStatus", async (req, res, next) => {
   try {
     if (!req.user) {
       return res.sendStatus(401);
     }
 
-    const { messageId, readAt } = req.body;
+    const { messageId, isRead } = req.body;
 
     // validation
-    if (!messageId || !readAt) {
-      next(new Error("messageId and readAt are required"));
-      return;
+    if (!messageId) {
+      return res.status(422).json({
+        error: "You must provide messageId",
+      });
     }
     // find message matching the message Id
     const message = await Message.findMessage(messageId);
 
     if (!message) {
-      next(new Error("message not found"));
-      return;
+      return res.status(404).json({
+        error: "Message not found",
+      });
     }
 
-    await Message.updateReadAt(message, readAt);
+    await Message.updateIsRead(message, isRead);
     res.json({
       conversationId: message.conversationId,
-      readAt,
+      isRead,
       messageId,
       userId: message.senderId,
     });
