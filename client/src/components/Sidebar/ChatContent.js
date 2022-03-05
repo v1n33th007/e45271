@@ -1,22 +1,29 @@
-import React from "react";
-import { Box, Typography } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import React from 'react';
+import { Box, Typography } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    display: "flex",
-    justifyContent: "space-between",
+    display: 'flex',
+    justifyContent: 'space-between',
     marginLeft: 20,
     flexGrow: 1,
   },
   username: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     letterSpacing: -0.2,
   },
   previewText: {
     fontSize: 12,
-    color: "#9CADC8",
+    color: '#9CADC8',
     letterSpacing: -0.17,
+    fontWeight: 600,
+  },
+  previewTextBold: {
+    fontSize: 12,
+    color: '#000000',
+    letterSpacing: -0.17,
+    fontWeight: 600,
   },
 }));
 
@@ -32,7 +39,13 @@ const ChatContent = ({ conversation }) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={classes.previewText}>
+        <Typography
+          className={
+            conversation.unreadMessagesCount
+              ? classes.previewTextBold
+              : classes.previewText
+          }
+        >
           {latestMessageText}
         </Typography>
       </Box>

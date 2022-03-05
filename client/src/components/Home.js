@@ -56,7 +56,7 @@ const Home = ({ user, logout }) => {
   };
 
   const saveReadStatus = async (body) => {
-    const { data } = await axios.post('/api/messages/updateReadStatus', body);
+    const { data } = await axios.patch('/api/messages/readStatus', body);
     return data;
   };
 
@@ -90,33 +90,41 @@ const Home = ({ user, logout }) => {
     return (conversations ?? []).map((conversation) => {
       const { messages, otherUser } = conversation;
       const lastReadMessage = findLast(messages, (message) => {
-        return message.senderId === otherUser.id && message.readAt;
+        return message.senderId === otherUser.id && message.isRead;
       });
       const lastReadMessageByOtherUser = findLast(messages, (message) => {
-        return message.senderId !== otherUser.id && message.readAt;
+        return message.senderId !== otherUser.id && message.isRead;
+      });
+      const lastUnreadMessage = findLast(messages, (message) => {
+        return (
+          message.id > (lastReadMessage?.id ?? 0) &&
+          message.senderId === otherUser.id &&
+          !message.isRead
+        );
       });
       return {
         ...conversation,
         lastReadMessage,
         lastReadMessageByOtherUser,
-        unreadMessages: messages.filter(
-          (message) => message.senderId === otherUser.id && !message.readAt
+        lastUnreadMessage,
+        unreadMessagesCount: messages.filter(
+          (message) => message.senderId === otherUser.id && !message.isRead
         ).length,
       };
     });
   }, []);
 
   const updateConversationsWithReadMessageData = useCallback(
-    (conversations, conversationId, messageId, readAt, userId) => {
+    (conversations, conversationId, messageId, isRead, userId) => {
       return conversations.map((convo) => {
         if (convo.id === conversationId) {
           const newMessages = (convo.messages ?? []).map((message) => {
             if (
               message.id <= messageId &&
-              !message.readAt &&
+              !message.isRead &&
               message.senderId === (userId ?? 0)
             ) {
-              return { ...message, readAt };
+              return { ...message, isRead };
             } else {
               return message;
             }
@@ -132,13 +140,13 @@ const Home = ({ user, logout }) => {
 
   const postReadStatus = async (body) => {
     try {
-      const { conversationId, readAt, messageId, userId } =
+      const { conversationId, isRead, messageId, userId } =
         await saveReadStatus(body);
       const newConversations = updateConversationsWithReadMessageData(
         conversations,
         conversationId,
         messageId,
-        readAt,
+        isRead,
         userId
       );
       const lastReadAndMesssageCountData =
@@ -146,7 +154,7 @@ const Home = ({ user, logout }) => {
       setConversations(lastReadAndMesssageCountData);
       sendReadReceipt({
         conversationId,
-        readAt,
+        isRead,
         messageId,
         userId,
       });
@@ -238,12 +246,12 @@ const Home = ({ user, logout }) => {
   }, []);
 
   const updateReadReceiptDataFromSocket = useCallback(
-    ({ conversationId, readAt, messageId, userId }) => {
+    ({ conversationId, isRead, messageId, userId }) => {
       const newConversations = updateConversationsWithReadMessageData(
         conversations,
         conversationId,
         messageId,
-        readAt,
+        isRead,
         userId
       );
       const lastReadAndMesssageCountData =

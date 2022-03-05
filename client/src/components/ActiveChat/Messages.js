@@ -2,35 +2,25 @@ import React, { useEffect } from 'react';
 import { Box } from '@material-ui/core';
 import { SenderBubble, OtherUserBubble } from '.';
 import moment from 'moment';
-import { findLast } from '../../utils/arrayUtils';
 
 const Messages = (props) => {
   const {
     messages,
     otherUser,
     userId,
-    lastReadMessage,
     postReadStatus,
     lastReadMessageByOtherUser,
+    lastUnreadMessage,
   } = props;
 
   useEffect(() => {
-    if (messages) {
-      const lastUnreadMessage = findLast(messages, (message) => {
-        return (
-          message.id > (lastReadMessage?.id ?? 0) &&
-          message.senderId !== userId &&
-          !message.readAt
-        );
+    if (lastUnreadMessage) {
+      postReadStatus({
+        messageId: lastUnreadMessage.id,
+        isRead: true,
       });
-      if (lastUnreadMessage) {
-        postReadStatus({
-          messageId: lastUnreadMessage.id,
-          readAt: moment().format(),
-        });
-      }
     }
-  }, [messages, lastReadMessage, postReadStatus, userId]);
+  }, [postReadStatus, lastUnreadMessage]);
 
   return (
     <Box>

@@ -19,13 +19,15 @@ const useStyles = makeStyles((theme) => ({
 
 const UnreadCount = ({ conversation }) => {
   const classes = useStyles();
-  const { unreadMessages } = conversation;
+  const { unreadMessagesCount } = conversation;
 
-  if (!unreadMessages) return null;
+  if (!unreadMessagesCount) return null;
 
   return (
     <Box className={classes.boxStyle}>
-      <Typography className={classes.unreadCount}>{unreadMessages}</Typography>
+      <Typography className={classes.unreadCount}>
+        {unreadMessagesCount}
+      </Typography>
     </Box>
   );
 };
