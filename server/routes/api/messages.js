@@ -43,4 +43,34 @@ router.post("/", async (req, res, next) => {
   }
 });
 
+router.patch("/readStatus", async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.sendStatus(401);
+    }
+
+    const { messageId, isRead } = req.body;
+
+    // validation
+    if (!messageId) {
+      return res.status(422).json({
+        error: "You must provide messageId",
+      });
+    }
+    // find message matching the message Id
+    const message = await Message.findMessage(messageId);
+
+    if (!message) {
+      return res.status(404).json({
+        error: "Message not found",
+      });
+    }
+
+    await Message.updateIsRead(message, isRead);
+    res.sendStatus(204);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
