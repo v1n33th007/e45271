@@ -18,6 +18,8 @@ const Messages = (props) => {
       postReadStatus({
         messageId: lastUnreadMessage.id,
         isRead: true,
+        conversationId: lastUnreadMessage.conversationId,
+        senderId: lastUnreadMessage.senderId,
       });
     }
   }, [postReadStatus, lastUnreadMessage]);

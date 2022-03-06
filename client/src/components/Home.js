@@ -140,14 +140,14 @@ const Home = ({ user, logout }) => {
 
   const postReadStatus = async (body) => {
     try {
-      const { conversationId, isRead, messageId, userId } =
-        await saveReadStatus(body);
+      const { conversationId, isRead, messageId, senderId } = body;
+      await saveReadStatus(body);
       const newConversations = updateConversationsWithReadMessageData(
         conversations,
         conversationId,
         messageId,
         isRead,
-        userId
+        senderId
       );
       const lastReadAndMesssageCountData =
         addLastReadMessageAndCount(newConversations);
@@ -156,7 +156,7 @@ const Home = ({ user, logout }) => {
         conversationId,
         isRead,
         messageId,
-        userId,
+        userId: senderId,
       });
     } catch (error) {
       console.error(error);

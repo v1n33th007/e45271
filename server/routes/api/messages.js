@@ -67,12 +67,7 @@ router.patch("/readStatus", async (req, res, next) => {
     }
 
     await Message.updateIsRead(message, isRead);
-    res.json({
-      conversationId: message.conversationId,
-      isRead,
-      messageId,
-      userId: message.senderId,
-    });
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }
