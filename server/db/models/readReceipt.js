@@ -1,7 +1,7 @@
-const Sequelize = require("sequelize");
 const db = require("../db");
+const Sequelize = require("sequelize");
 
-const ReadReceipts = db.define("readReceipts", {
+const ReadReceipt = db.define("readReceipt", {
   isRead: {
     type: Sequelize.BOOLEAN,
     allowNull: false,
@@ -9,4 +9,4 @@ const ReadReceipts = db.define("readReceipts", {
   },
 });
 
-module.exports = ReadReceipts;
+module.exports = ReadReceipt;
