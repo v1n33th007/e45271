@@ -1,6 +1,7 @@
 const db = require("./db");
 const { User } = require("./models");
 const Conversation = require("./models/conversation");
+const ConversationUsers = require("./models/conversationUsers");
 const Message = require("./models/message");
 
 async function seed() {
@@ -23,10 +24,8 @@ async function seed() {
       "https://res.cloudinary.com/dmlvthmqr/image/upload/v1607914466/messenger/775db5e79c5294846949f1f55059b53317f51e30_s3back.png",
   });
 
-  const santaigoConvo = await Conversation.create({
-    user1Id: thomas.id,
-    user2Id: santiago.id,
-  });
+  const santaigoConvo = await Conversation.create({});
+  santaigoConvo.addUsers([thomas, santiago]);
 
   await Message.create({
     conversationId: santaigoConvo.id,
@@ -51,10 +50,9 @@ async function seed() {
     photoUrl:
       "https://res.cloudinary.com/dmlvthmqr/image/upload/v1607914468/messenger/8bc2e13b8ab74765fd57f0880f318eed1c3fb001_fownwt.png",
   });
-  const chiumboConvo = await Conversation.create({
-    user1Id: chiumbo.id,
-    user2Id: thomas.id,
-  });
+  const chiumboConvo = await Conversation.create({});
+  chiumboConvo.addUsers([chiumbo, thomas]);
+
   await Message.create({
     conversationId: chiumboConvo.id,
     senderId: chiumbo.id,
@@ -72,6 +70,8 @@ async function seed() {
     user2Id: hualing.id,
     user1Id: thomas.id,
   });
+
+  hualingConvo.addUsers([thomas, hualing]);
 
   for (let i = 0; i < 11; i++) {
     await Message.create({
